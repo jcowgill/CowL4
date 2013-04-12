@@ -1,0 +1,9 @@
+# Visual Studio Ignores
+*.sdf
+*.user
+*.suo
+*.opensdf
+
+# Output directories
+Debug/
+Release/
