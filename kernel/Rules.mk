@@ -19,7 +19,7 @@
 #
 
 # Local flags
-CF_LOCAL := -ffreestanding -Ikernel/include
+CF_LOCAL := -ffreestanding -Ikernel/include -mcmodel=kernel
 AF_LOCAL :=
 LF_LOCAL := -T kernel/src/kernel.ld
 
