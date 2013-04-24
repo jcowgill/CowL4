@@ -138,7 +138,7 @@ Init32:
     mov cr0, eax
 
     # Jump to 64-bit segment
-    ljmp 0x08:#.jump64Stub
+    ljmp 0x08, .jump64Stub
 
 .jump64Stub:
     # This is required since you cannot jump directly to a 64-bit address from 32-bit mode

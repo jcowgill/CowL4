@@ -147,7 +147,7 @@ IntrEntryStart:
 .endr
 
     # Default entries for IRQ interrupts
-.set i, 18
+.set i, 32
 .rept 256 - 32
     IsrCode i, IntrEntryCommon
     .set i, i + 1
