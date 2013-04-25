@@ -120,14 +120,14 @@ IntrEntryStart:
     .skip 6         # 6 bytes
 .endm
 
-    IsrCode        0, IntrEntryCommon
+    IsrCode        0, IntrEntryNormal
     IsrCode        1, IntrEntryPanicNoError
-    IsrCode        2, IntrEntryCommon
-    IsrCode        3, IntrEntryCommon
+    IsrCode        2, IntrEntryNormal
+    IsrCode        3, IntrEntryNormal
     IsrCodeIgnore #4
     IsrCodeIgnore #5
-    IsrCode        6, IntrEntryCommon
-    IsrCode        7, IntrEntryCommon
+    IsrCode        6, IntrEntryNormal
+    IsrCode        7, IntrEntryNormal
     IsrCode        8, IntrEntryPanic
     IsrCodeIgnore #9
     IsrCode       10, IntrEntryPanic
@@ -135,11 +135,11 @@ IntrEntryStart:
     IsrCode       12, IntrEntryErrorCode
     IsrCode       13, IntrEntryErrorCode
     IsrCode       14, IntrEntryErrorCode
-    IsrCode       15, IntrEntryCommon
-    IsrCode       16, IntrEntryCommon
+    IsrCode       15, IntrEntryNormal
+    IsrCode       16, IntrEntryNormal
     IsrCode       17, IntrEntryErrorCode
     IsrCode       18, IntrEntryPanicNoError
-    IsrCode       19, IntrEntryCommon
+    IsrCode       19, IntrEntryNormal
 
     # Ignore unused exceptions
 .rept 32 - 20
@@ -149,28 +149,56 @@ IntrEntryStart:
     # Default entries for IRQ interrupts
 .set i, 32
 .rept 256 - 32
-    IsrCode i, IntrEntryCommon
+    IsrCode i, IntrEntryNormal
     .set i, i + 1
 .endr
 
-IntrEntryErrorCode:
-    # Common code for interrupts producing an error
-    xchg bx, bx
-    hlt
+IntrEntryNormal:
+    # Change stack from (<blank> rax)
+    #                to (    rax rsi)
+    xchg rsi, [rsp]
+    push rsi
 
-    # Complete interrupt
-    pop rax
-    add esp, 8
-    iretq
+    # Jump to common entry point
+    jmp IntrEntryNormal
+
+IntrEntryErrorCode:
+    # Change stack from (rax <error>)
+    #                to (rax rsi    )
+    xchg rsi, [rsp + 8]
 
 IntrEntryCommon:
-    # Common code for interrupts not producing an error
+    # Common interrupt entry code
+    #  Push the rest of the state (rax and rsi already saved)
+    push rcx
+    push rdx
+    push rdi
+    push r8
+    push r9
+    push r10
+    push r11
+    swapgs
+
+    # Move error number to first argument
+    movzx rdi, al
+
+    # Call interrupt C routine
+    #  arg1 = interrupt number
+    #  arg2 = error code
     xchg bx, bx
-    hlt
 
+    # Restore state and return
+    swapgs
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rdi
+    pop rdx
+    pop rcx
 
-    # Complete interrupt
     pop rax
+    pop rsi
     iretq
 
 IntrEntryPanicNoError:
