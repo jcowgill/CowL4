@@ -24,7 +24,9 @@ AF_LOCAL :=
 LF_LOCAL := -T kernel/src/kernel.ld
 
 # Input files
-SOURCES := $(wildcard kernel/src/*.c) $(wildcard kernel/src/*.s)
+SOURCES  := $(wildcard kernel/src/*.c)      $(wildcard kernel/src/*.s)
+SOURCES  += $(wildcard kernel/src/boot/*.c) $(wildcard kernel/src/boot/*.s)
+
 INCLUDES := $(wildcard kernel/include/*.h)
 
 OBJS := $(addprefix $(BUILD_DIR)/, $(addsuffix .o, $(basename $(SOURCES))))
@@ -36,7 +38,8 @@ $(BUILD_DIR)/kernel.elf: $(OBJS) kernel/src/kernel.ld
 
 $(BUILD_DIR)/kernel/%.o: kernel/%.c $(INCLUDES)
 	@mkdir -p $(dir $@)
-	$(CC) $(CF_GLOBAL) $(CF_LOCAL) -o $@ -c $<
+	$(CC) $(CF_GLOBAL) $(CF_LOCAL) -o $@.s -S $<
+	$(AS) -o $@ $@.s
 
 $(BUILD_DIR)/kernel/%.o: kernel/%.s
 	@mkdir -p $(dir $@)

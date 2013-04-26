@@ -24,7 +24,7 @@ AS := amd64-elf-as
 LD := amd64-elf-ld
 
 # Global Compiler Options
-CF_GLOBAL := -ccc-host-triple amd64-pc-unknown-gnu -Weverything -g -std=gnu99 -fno-common
+CF_GLOBAL := -ccc-host-triple amd64-elf -Weverything -g -std=gnu11 -fno-common
 AF_GLOBAL := -g
 LF_GLOBAL := -n
 

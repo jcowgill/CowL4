@@ -1,6 +1,6 @@
 /*
- * kernel/src/init32.s
- * 32-bit Kernel Initialization
+ * kernel/src/boot/start.s
+ * Kernel Startup Code (mostly 32-bit)
  *
  * Copyright (C) 2013 James Cowgill
  *
@@ -21,25 +21,19 @@
 .code32
 .intel_syntax noprefix
 
-.global Init32
+.global BootStart
 
-.bss
-    .align 4096
+.section .boot32, "awx", @progbits
+BootSectionStart:
+    # Boot stack is stored at the end of the boot section
+    .set BootStack, BootSectionStart + 4096
 
-MemKernelTable:
-    # Paging tables used by kernel mode
-    .skip 4096          # PML4 Table (covers entire address space)
-    .skip 4096          # Kernel PDPT (covers 512 GB)
-    .skip 4096          # First PDT (covers 1GB)
-    .skip 4096          # Second PDT (covers 1GB)
-
-.section .init32, "ax", @progbits
     # Multiboot header
     .long 0x1BADB002    # Magic Number
     .long 2             # Flags (populate memory)
     .long 0xE4524FFC    # Checksum
 
-Init32:
+BootStart:
     # Kernel entry point
     xchg bx, bx
     cli
@@ -47,10 +41,10 @@ Init32:
 
     # Ensure we're using a multiboot bootloader
     cmp eax, 0x2BADB002
-    jne Init32NotMultiboot
+    jne BootNotMultiboot
 
     # Attempt to flip ID flag
-    mov esp, Init32
+    mov esp, BootStack
     pushfd
     pop eax
     mov ecx, eax
@@ -62,29 +56,29 @@ Init32:
     pushfd
     pop eax
     xor eax, ecx
-    jz Init32Not64Bit
+    jz BootNot64Bit
 
     # CPUID Test - High Registers Available
     mov eax, 0x80000000
     cpuid
     test eax, 0x7FFFFFFF
-    jz Init32Not64Bit
+    jz BootNot64Bit
 
     # CPUID Test - Long Mode Available
     mov eax, 0x80000001
     cpuid
     test edx, 0x20000000
-    jz Init32Not64Bit
+    jz BootNot64Bit
 
     # CPUID Test - IOAPIC Available
     mov eax, 1
     cpuid
     test edx, 0x00000020
-    jz Init32Not64Bit
+    jz BootNot64Bit
 
     # Paging Setup - PML4
-    mov edx, [Init32MemKernelTable]
-    lea eax, [edx + 0x1003]     #= Address of kernel PDPT + 3 (present, writable flags)
+    mov edx, [BootMemKernelTable]
+    lea eax, [edx + 0x1003]     # Address of kernel PDPT + 3 (present, writable flags)
     mov [edx], eax              # Set first and last entries of the PML4
     mov [edx + 0xFF8], eax
 
@@ -101,14 +95,15 @@ Init32:
     mov eax, 0x183              # Initialize with entry for page 0 (present, writable, 2mb, global)
     mov ecx, 1024               # 1024 entries in total (comes to 2GB)
 
-.fillPageEntry:
+BootFillPageEntry:
     mov [edx], eax              # Fill entry
     add edx, 8                  # Advance 1 entry
     add eax, 0x200000           # Advance 2MB
     sub ecx, 1
-    jnz .fillPageEntry
+    jnz BootFillPageEntry
 
     # Enable relevant bits in CR0 and CR4
+    xchg bx, bx
     mov eax, cr0
     or eax, 0x00040020      # Set NE, AM
     and eax, 0x1FFEFFF1     # Clear MP, EM, TS, WP, NW, CD, PG
@@ -120,11 +115,11 @@ Init32:
     mov cr4, eax
 
     # Load page tables
-    mov eax, [Init32MemKernelTable]
+    mov eax, [BootMemKernelTable]
     mov cr3, eax
 
     # Load 64-bit GDT
-    lgdt [Init32GdtPtr]
+    lgdt [BootGdtPtr]
 
     # Enable long mode (and other stuff) in EFER MSR
     mov ecx, 0xC0000080
@@ -138,27 +133,36 @@ Init32:
     mov cr0, eax
 
     # Jump to 64-bit segment
-    ljmp 0x08, .jump64Stub
+    ljmp 0x08, Boot64Start
 
-.jump64Stub:
+Boot64Start:
     # This is required since you cannot jump directly to a 64-bit address from 32-bit mode
     .code64
-    mov rax, Init64
-    jmp rax
+
+    # Fixup multiboot header address
+    or ebx, 0x80000000
+    movsx rdi, ebx
+
+    # Load boot stack
+    mov rsp, BootStack + 0xFFFFFFFF80000000
+
+    # Call main 64 bit code
+    mov rax, BootMain
+    call rax
 
     # Initialization Error Handling
     # --------------------
 
-Init32NotMultiboot:
+BootNotMultiboot:
     # Error if loaded by a non-multiboot loader
     mov esi, NotMultibootStr
-    jmp Init32Error
+    jmp BootError
 
-Init32Not64Bit:
+BootNot64Bit:
     # Error if loaded by a non-64bit cpu
     mov esi, Not64BitStr
 
-Init32Error:
+BootError:
     # Fatal initialization error
     #  Message provided in esi
 
@@ -185,19 +189,19 @@ Init32Error:
     # --------------------
 
     .align 8
-Init32Gdt:
+BootGdt:
     # Dummy GDT used for 64-bit transition (replaced in Init64)
     .word 0         # Word to align pointer
 
-Init32GdtPtr:
+BootGdtPtr:
     .word 16        # 2 GDT entries
-    .long Init32Gdt
+    .long BootGdt
 
     .byte 0, 0, 0, 0, 0, 0x9B, 0xA0, 0     #Selector 08h - Ring 0 Code (64-Bits)
 
     # Stores physical location of kernel paging tables
-Init32MemKernelTable:
-    .quad MemKernelTable - 0xFFFFFFFF80000000
+BootMemKernelTable:
+    .quad MemKernelTables - 0xFFFFFFFF80000000
 
     # Initiliazation Error strings
 NotMultibootStr:
