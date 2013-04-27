@@ -28,8 +28,24 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// Global configuration
+#include "config.h"
+
 // Compiler attributes
 #define ALIGN(x)    __attribute__((aligned(x)))
 #define NO_RETURN   __attribute__((noreturn))
+
+// Bochs breakpoints
+#define BREAKPOINT  __asm volatile("xchgw %bx, %bx")
+
+// Global functions
+//  Panic - Immediately halts the kernel on all CPUs
+void NO_RETURN Panic(const char * msg);
+
+// memset - fills in a region of memory with the given value
+void * memset(void * dest, uint8_t value, uint64_t len);
+
+// memcpy - copies a region of memory (regions must not overlap)
+void * memcpy(void * restrict dest, const void * restrict src, uint64_t len);
 
 #endif

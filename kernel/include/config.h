@@ -1,6 +1,9 @@
+#ifndef KERNEL_CONFIG_H
+#define KERNEL_CONFIG_H
+
 /*
- * kernel/src/boot/main.c
- * Main Kernel Booting Code
+ * kernel/include/config.h
+ * Kernel configuration parameters
  *
  * Copyright (C) 2013 James Cowgill
  *
@@ -18,10 +21,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "global.h"
-#include "multiboot.h"
+// The version of the L4 spec the kernel implements (X.2 Rev 7)
+#define CONFIG_L4_VERSION   0x84070000
 
-void NO_RETURN BootMain(MultibootInfo * bootInfo)
-{
-    Panic("Nothing here yet");
-}
+// L4 API flags
+#define CONFIG_L4_FLAGS     0x00000008
+
+// The L4 ID of this kernel (id 6, subid 1)
+#define CONFIG_L4_ID        0x06010000
+
+// Kernel version
+//  High 8 bits = Major version
+//  Next 8 bits = Minor version
+//  Low 16 bits = Revision
+#define CONFIG_VERSION      0x01000000
+
+// The kernel supplier (only first 4 characters used)
+#define CONFIG_SUPPLIER     "COW "
+
+// The date information of when this kernel was built
+#define CONFIG_BUILD_DATE   __DATE__
+
+#endif
