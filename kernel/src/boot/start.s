@@ -35,7 +35,6 @@ BootSectionStart:
 
 BootStart:
     # Kernel entry point
-    xchg bx, bx
     cli
     cld
 
@@ -44,7 +43,7 @@ BootStart:
     jne BootNotMultiboot
 
     # Attempt to flip ID flag
-    mov esp, BootStack
+    mov esp, offset BootStack
     pushfd
     pop eax
     mov ecx, eax
@@ -103,7 +102,6 @@ BootFillPageEntry:
     jnz BootFillPageEntry
 
     # Enable relevant bits in CR0 and CR4
-    xchg bx, bx
     mov eax, cr0
     or eax, 0x00040020      # Set NE, AM
     and eax, 0x1FFEFFF1     # Clear MP, EM, TS, WP, NW, CD, PG
@@ -144,23 +142,25 @@ Boot64Start:
     movsx rdi, ebx
 
     # Load boot stack
-    mov rsp, BootStack + 0xFFFFFFFF80000000
+    mov rsp, offset BootStack + 0xFFFFFFFF80000000
 
     # Call main 64 bit code
-    mov rax, BootMain
+    mov rax, offset BootMain
     call rax
 
     # Initialization Error Handling
     # --------------------
 
+    .code32
+
 BootNotMultiboot:
     # Error if loaded by a non-multiboot loader
-    mov esi, NotMultibootStr
+    mov esi, offset NotMultibootStr
     jmp BootError
 
 BootNot64Bit:
     # Error if loaded by a non-64bit cpu
-    mov esi, Not64BitStr
+    mov esi, offset Not64BitStr
 
 BootError:
     # Fatal initialization error
