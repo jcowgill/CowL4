@@ -21,6 +21,8 @@
 #include "global.h"
 #include "multiboot.h"
 
+void NO_RETURN BootMain(MultibootInfo * bootInfo);
+
 void NO_RETURN BootMain(MultibootInfo * bootInfo)
 {
     Panic("Nothing here yet");

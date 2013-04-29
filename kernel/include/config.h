@@ -37,9 +37,12 @@
 #define CONFIG_VERSION      0x01000000
 
 // The kernel supplier (only first 4 characters used)
-#define CONFIG_SUPPLIER     "COW "
+#define CONFIG_SUPPLIER     "TheCow  "
 
-// The date information of when this kernel was built
-#define CONFIG_BUILD_DATE   __DATE__
+// Extra version data (max 95 bytes)
+#define CONFIG_VERSION_EXTRA    ("CowL4. James Cowgill. Built " __DATE__ ".")
+
+// Timer interrupt rate
+#define CONFIG_HZ           1000
 
 #endif

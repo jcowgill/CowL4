@@ -31,9 +31,10 @@
 // Global configuration
 #include "config.h"
 
-// Compiler attributes
+// Compiler attributes and intrinsics
 #define ALIGN(x)    __attribute__((aligned(x)))
 #define NO_RETURN   __attribute__((noreturn))
+#define CLZ(x)      __builtin_clzl(x)
 
 // Bochs breakpoints
 #define BREAKPOINT  __asm volatile("xchgw %bx, %bx")
