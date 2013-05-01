@@ -42,7 +42,7 @@ memcpy:
 
     # Use movsb for the rest
     mov rcx, rdx
-    and rcx, 3
+    and rcx, 7
     rep movsb
 
     ret
@@ -88,8 +88,8 @@ memset.large:
 memset.small:
     # Use stosb for small parts
     mov rcx, rdx
-    and rcx, 3
-    rep movsb
+    and rcx, 7
+    rep stosb
 
     # Restore dest into rax
     mov rax, r8
