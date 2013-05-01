@@ -36,12 +36,24 @@
 #define NO_RETURN   __attribute__((noreturn))
 #define CLZ(x)      __builtin_clzl(x)
 
+// Assert
+#define STRING(x)   #x
+#define XSTRING(x)  STRING(x)
+
+#ifdef NDEBUG
+# define Assert(x)  ((void) 0)
+#else
+# define Assert(x)  ((x) ? ((void) 0) : \
+                        PanicAssert(STRING(x), __FILE__ ":" XSTRING(__LINE__), __func__))
+#endif
+
 // Bochs breakpoints
 #define BREAKPOINT  __asm volatile("xchgw %bx, %bx")
 
 // Global functions
 //  Panic - Immediately halts the kernel on all CPUs
 void NO_RETURN Panic(const char * msg);
+void NO_RETURN PanicAssert(const char * assertion, const char * file, const char * func);
 
 // memset - fills in a region of memory with the given value
 void * memset(void * dest, uint8_t value, uint64_t len);

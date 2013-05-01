@@ -19,7 +19,6 @@
  */
 
 #include "global.h"
-
 #include "atomic.h"
 #include "ioports.h"
 #include "list.h"
@@ -30,35 +29,77 @@
 // Colour for panic messages (0x0C00 = Bright Red on Black Background)
 #define SCREEN_COLOUR 0x0C00
 
-// Number of characters to erase from top of screen (80 chars is one line)
-#define SCREEN_ERASE_AMOUNT (80 * 2)
+// Number of bytes to erase from top of screen (1 line = 160 bytes)
+#define SCREEN_ERASE_BYTES (160 * 2)
 
-void NO_RETURN Panic(const char * msg)
+// Clears the top 2 rows of the screen
+static void ClearTopRows()
 {
-    // TODO Fix this for multiple processors
+    memset(SCREEN_START, 0, SCREEN_ERASE_BYTES); 
+}
 
-    // Erase first few lines
-    memset(SCREEN_START, 0, SCREEN_ERASE_AMOUNT * 2);
-
-    // Print message prefix
-    int16_t * screenPtr = SCREEN_START;
-    char * msgPrefix = "Kernel Panic: ";
-
-    while(*msgPrefix)
-        *screenPtr++ = *msgPrefix++ | SCREEN_COLOUR;
-
-    // Print main message
-    if (msg != NULL)
+// Prints a message in red + returns the new screen pointer
+static int16_t * PrintInRed(int16_t * screenPtr, const char * msg)
+{
+    if (msg)
     {
         while(*msg)
             *screenPtr++ = *msg++ | SCREEN_COLOUR;
     }
+        
+    return screenPtr;
+}
 
-    // Halt processor
+// Moves the screen pointer to the next line
+static int16_t * PrintNewLine(int16_t * screenPtr)
+{
+    return screenPtr + (80 - ((screenPtr - SCREEN_START) % 80));
+}
+
+// Halts the processor
+static void NO_RETURN Halt()
+{
     BREAKPOINT;
     for(;;)
     {
         __asm volatile( "cli\n"
                         "hlt\n");
     }
+}
+
+void NO_RETURN Panic(const char * msg)
+{
+#warning Todo - fix Panic for multiple processors
+
+    // Erase first few lines
+    ClearTopRows();
+
+    // Print panic message
+    int16_t * screenPtr = SCREEN_START;
+    
+    screenPtr = PrintInRed(screenPtr, "Kernel Panic: ");
+    screenPtr = PrintInRed(screenPtr, msg);
+    
+    // Halt processor
+    Halt();
+}
+
+void NO_RETURN PanicAssert(const char * assertion, const char * file, const char * func)
+{
+    // Erase first few lines
+    ClearTopRows();
+
+    // Print panic message
+    int16_t * screenPtr = SCREEN_START;
+    
+    screenPtr = PrintInRed(screenPtr, "Kernel Panic - Assertion Failed: ");
+    screenPtr = PrintInRed(screenPtr, assertion);
+    screenPtr = PrintNewLine(screenPtr);
+    screenPtr = PrintInRed(screenPtr, " at ");
+    screenPtr = PrintInRed(screenPtr, file);
+    screenPtr = PrintInRed(screenPtr, " ");
+    screenPtr = PrintInRed(screenPtr, func);
+    
+    // Halt processor
+    Halt();
 }
