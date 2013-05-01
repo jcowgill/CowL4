@@ -20,10 +20,16 @@
 
 #include "global.h"
 #include "multiboot.h"
+#include "kmemory.h"
 
 void NO_RETURN BootMain(MultibootInfo * bootInfo);
 
 void NO_RETURN BootMain(MultibootInfo * bootInfo)
 {
+#warning Todo - use the memory map for this
+    // Setup the kernel memory manager (currently 2MB starting at 2MB address)
+    (void) bootInfo;
+    KMemInit((void *) 0xFFFFFFFF80200000, 0x00200000);
+    
     Panic("Nothing here yet");
 }

@@ -59,6 +59,10 @@ void * KMemZAllocate(void)
 
 void KMemFree(void * page)
 {
+    // Ignore NULL free
+    if (page == NULL)
+        return;
+
     // Enter lock
     AtomicLock(&KMemStackLock);
     {
@@ -69,8 +73,20 @@ void KMemFree(void * page)
     AtomicUnlock(&KMemStackLock);
 }
 
-void KMemInit(MultibootInfo * bootInfo)
+void KMemInit(void * base, uint64_t length)
 {
-    // Search the memory map for some memory to use
-#warning Todo - find some memory to (ab)use
+    uint64_t rawBase = (uint64_t) base;
+
+    // Require page alignment and some memory
+    Assert(((uint64_t) base & 0xFFF) == 0);
+    Assert((length & 0xFFF) == 0);
+    Assert(length > 0);
+    
+    // Push all memory onto the stack
+    for (uint64_t i = 0x1000; i < length; i += 0x1000)
+        *((uint64_t *) (rawBase + i)) = rawBase + i - 0x1000;
+        
+    // Clear bottom page to NULL and set top page as the head of the stack
+    *((uint64_t *) rawBase) = 0;
+    KMemStackRoot = (void *) (rawBase + length - 0x1000);
 }

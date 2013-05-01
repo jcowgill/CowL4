@@ -24,8 +24,10 @@
 #include "global.h"
 #include "multiboot.h"
 
-// Initializes the kernel memory manager using the memory map in the multiboot structure
-void KMemInit(MultibootInfo * bootInfo);
+// Initializes the kernel memory manager using the given region of memory
+//  The base address is a virtual (not physical) address
+//  The base address and length must be page aligned
+void KMemInit(void * base, uint64_t length);
 
 // Allocates 1 page of kernel memory
 //  ZAllocate zeros the page before returning it
