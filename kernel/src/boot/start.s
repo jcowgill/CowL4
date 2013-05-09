@@ -69,10 +69,10 @@ BootStart:
     test edx, 0x20000000
     jz BootNot64Bit
 
-    # CPUID Test - IOAPIC Available
+    # CPUID Test - APIC Available
     mov eax, 1
     cpuid
-    test edx, 0x00000020
+    test edx, 0x00000200
     jz BootNot64Bit
 
     # Paging Setup - PML4
