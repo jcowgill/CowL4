@@ -61,4 +61,7 @@ void * memset(void * dest, uint8_t value, uint64_t len);
 // memcpy - copies a region of memory (regions must not overlap)
 void * memcpy(void * restrict dest, const void * restrict src, uint64_t len);
 
+// memcmp - compares regions of memory
+int memcmp(const void * restrict a, const void * restrict b, uint64_t len);
+
 #endif

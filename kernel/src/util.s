@@ -21,7 +21,7 @@
 .code64
 .intel_syntax noprefix
 
-.global memcpy, memset
+.global memcpy, memset, memcmp
 
 .text
     .align 16
@@ -93,4 +93,29 @@ memset.small:
 
     # Restore dest into rax
     mov rax, r8
+    ret
+
+    .align 16
+memcmp:
+    # int memcmp(const void * restrict a, const void * restrict b, uint64_t len)
+    #  rdi = a
+    #  rsi = b
+    #  rdx = len
+    #  return result in rax
+
+    # Clear result register
+    xor rax, rax
+
+    # Do the bulk of the comparison
+    mov rcx, rdx
+    repe cmpsb
+
+    # Produce signed result
+    jz 1f
+    jc 2f
+    not rax
+1:
+    ret
+2:
+    mov al, 1
     ret
