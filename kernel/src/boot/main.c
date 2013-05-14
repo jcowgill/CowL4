@@ -29,7 +29,7 @@ void NO_RETURN BootMain(MultibootInfo * bootInfo)
 #warning Todo - use the memory map for this
     // Setup the kernel memory manager (currently 2MB starting at 2MB address)
     (void) bootInfo;
-    KMemInit((void *) 0xFFFFFFFF80200000, 0x00200000);
+    KMemInit(0x00200000, 0x00200000);
     
     Panic("Nothing here yet");
 }

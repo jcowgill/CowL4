@@ -73,12 +73,12 @@ void KMemFree(void * page)
     AtomicUnlock(&KMemStackLock);
 }
 
-void KMemInit(void * base, uint64_t length)
+void KMemInit(uint32_t base, uint32_t length)
 {
-    uint64_t rawBase = (uint64_t) base;
+    uint64_t rawBase = (uint64_t) KMemFromPhysical(base);
 
     // Require page alignment and some memory
-    Assert(((uint64_t) base & 0xFFF) == 0);
+    Assert((base & 0xFFF) == 0);
     Assert((length & 0xFFF) == 0);
     Assert(length > 0);
     

@@ -24,10 +24,17 @@
 #include "global.h"
 #include "multiboot.h"
 
+// Returns a pointer which can be used to access the first 4GB of physical memory
+static inline void * KMemFromPhysical(uint32_t pAddr)
+{
+    // FFFF FF80 0000 0000
+    return (void *) (0xFFFFFF8000000000 + pAddr);
+}
+
 // Initializes the kernel memory manager using the given region of memory
-//  The base address is a virtual (not physical) address
+//  The base address is a physical address
 //  The base address and length must be page aligned
-void KMemInit(void * base, uint64_t length);
+void KMemInit(uint32_t base, uint32_t length);
 
 // Allocates 1 page of kernel memory
 //  ZAllocate zeros the page before returning it

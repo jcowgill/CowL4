@@ -23,7 +23,6 @@
 // Kernel only paging tables
 //  Initialized in start.s
 //  0000 - 0FFF = PML4 Table
-//  1000 - 1FFF = PDPT (covers first and last 512 GB)
-//  2000 - 2FFF = First PDT (covers first 1GB of physical memory)
-//  3000 - 3FFF = Second PDT (covers second 1GB of physical memory)
-uint8_t MemKernelTables[0x4000] ALIGN(4096);
+//  1000 - 1FFF = PDPT (512 GB mapped pages)
+//  2000 - 5FFF = 4 PDT Tables (covering first 4GB of physical memory)
+uint8_t MemKernelTables[0x6000] ALIGN(4096);

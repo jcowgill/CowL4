@@ -77,22 +77,30 @@ BootStart:
 
     # Paging Setup - PML4
     mov edx, [BootMemKernelTable]
+    mov cr3, edx                # Load PML4 address into cr3
+
     lea eax, [edx + 0x1003]     # Address of kernel PDPT + 3 (present, writable flags)
     mov [edx], eax              # Set first and last entries of the PML4
     mov [edx + 0xFF8], eax
 
     # Paging Setup - PDPT Entries
-    add eax, 0x1000             # Get address of first PDT (flags are same as before)
-    mov [edx + 0x1000], eax     # Set first PDPT entry (each entry covers 1GB)
-    mov [edx + 0x1FF0], eax     # Set 2nd to last PDPT entry
-    add eax, 0x1000             # Get address of second PDT (flags are same as before)
-    mov [edx + 0x1008], eax     # Set second PDPT entry
-    mov [edx + 0x1FF8], eax     # Set last PDPT entry
+    #  1 entry in upper half (kernel code)
+    add eax, 0x1000             # Address of first PDT + 3 (present, writable)
+    mov [edx + 0x1FF0], eax
+
+    #  4 entries in lower half (kernel physical memory access)
+    mov [edx + 0x1000], eax
+    add eax, 0x1000
+    mov [edx + 0x1008], eax
+    add eax, 0x1000
+    mov [edx + 0x1010], eax
+    add eax, 0x1000
+    mov [edx + 0x1018], eax
 
     # Paging Setup - PDT Entries (loop through both tables)
     add edx, 0x2000             # Move to beginning of the first PDT
     mov eax, 0x183              # Initialize with entry for page 0 (present, writable, 2mb, global)
-    mov ecx, 1024               # 1024 entries in total (comes to 2GB)
+    mov ecx, 0x1000             # 4096 entries in total (comes to 4GB)
 
 BootFillPageEntry:
     mov [edx], eax              # Fill entry
@@ -111,10 +119,6 @@ BootFillPageEntry:
     or eax, 0x000007A8      # Set DE, PAE, PGE, PCE, OSFXSR, OSXMMEXCPT
     and eax, 0xFFFFFFF8     # Clear VME, PVI, TSD
     mov cr4, eax
-
-    # Load page tables
-    mov eax, [BootMemKernelTable]
-    mov cr3, eax
 
     # Load 64-bit GDT
     lgdt [BootGdtPtr]

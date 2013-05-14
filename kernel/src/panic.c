@@ -21,10 +21,11 @@
 #include "global.h"
 #include "atomic.h"
 #include "ioports.h"
+#include "kmemory.h"
 #include "list.h"
 
 // Start of text mode screen buffer
-#define SCREEN_START ((int16_t *) 0xFFFFFFFF800B8000)
+#define SCREEN_START ((int16_t *) KMemFromPhysical(0xB8000))
 
 // Colour for panic messages (0x0C00 = Bright Red on Black Background)
 #define SCREEN_COLOUR 0x0C00
