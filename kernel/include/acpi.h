@@ -42,6 +42,77 @@ typedef struct AcpiRsdp
 // Signature for the RSDP
 #define ACPI_RSDP_SIG "RSD PTR "
 
+// The header of all ACPI tables
+typedef struct AcpiTableHeader
+{
+    char        type[4];        // Table signature
+    uint32_t    length;         // Table size
+    uint8_t     revision;       // Table revision
+    uint8_t     checksum;       // Table checksum field
+    char        oem[6];         // OEM Identifier
+    char        oemTableId[8];  // OEM Table Identifier
+    uint32_t    oemRevision;    // OEM Revision
+    char        creator[4];     // Creator Identifier
+    uint32_t    creatorRevision;// Creator Revision
+
+} AcpiTableHeader;
+
+// The ACPI Root System Descriptor Table
+typedef struct AcpiRsdt
+{
+    AcpiTableHeader header;     // Table header
+    uint32_t        entry[];    // Table entries
+
+} AcpiRsdt;
+
+// The ACPI Extended System Descriptor Table
+typedef struct AcpiXsdt
+{
+    AcpiTableHeader header;     // Table header
+    uint64_t        entry[];    // Table entries
+
+} AcpiXsdt;
+
+// The ACPI Multiple APIC Description Table
+typedef struct AcpiMadt
+{
+    AcpiTableHeader header;         // Table header
+    uint32_t        localApicAddr;  // Address of local APIC
+    uint32_t        flags;          // APIC flags
+    char            data[];         // MADT entries follow
+
+} AcpiMadt;
+
+// MADT entry types
+#define ACPI_MADT_TAPIC     0
+#define ACPI_MADT_TIOAPIC   1
+
+// APIC flag which must be true to use that CPU
+#define ACPI_MADT_APIC_EN   1
+
+// Local APIC entry in the MADT
+typedef struct AcpiMadtApic
+{
+    uint8_t         type;       // = 0
+    uint8_t         length;     // = 8
+    uint8_t         acpiId;     // ACPI Processor ID
+    uint8_t         apicId;     // Local APIC ID
+    uint32_t        flags;      // Processor Flags
+
+} AcpiMadtApic;
+
+// IO APIC entry in the MADT
+typedef struct AcpiMadtIoApic
+{
+    uint8_t         type;       // = 1
+    uint8_t         length;     // = 12
+    uint8_t         acpiId;     // IO APIC ID
+    uint8_t         reserved;
+    uint32_t        addr;       // Address of this IO APIC
+    uint32_t        intrBase;   // First interrupt number this IO APIC handles
+
+} AcpiMadtIoApic;
+
 // Verifies the checksum of an ACPI table
 bool AcpiVerifyChecksum(void * data, uint32_t length);
 
