@@ -19,8 +19,9 @@
  */
 
 #include "global.h"
-#include "multiboot.h"
+#include "cpu.h"
 #include "kmemory.h"
+#include "multiboot.h"
 
 void NO_RETURN BootMain(MultibootInfo * bootInfo);
 
@@ -31,5 +32,8 @@ void NO_RETURN BootMain(MultibootInfo * bootInfo)
     (void) bootInfo;
     KMemInit(0x00200000, 0x00200000);
     
+    // Initialize all CPUs
+    CpuInitAll();
+
     Panic("Nothing here yet");
 }
