@@ -78,8 +78,8 @@ CpuInit32:
 
     # Enable relevant bits in CR0 and CR4
     mov eax, cr0
-    or eax, 0x00040020      # Set NE, AM
-    and eax, 0x1FFEFFF1     # Clear MP, EM, TS, WP, NW, CD, PG
+    or eax, 0x00040022      # Set NE, AM, MP
+    and eax, 0x1FFEFFF3     # Clear EM, TS, WP, NW, CD, PG
     mov cr0, eax
 
     mov eax, cr4
