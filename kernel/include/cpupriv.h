@@ -149,4 +149,18 @@ typedef struct AcpiMadtApic
 // Temp Init location
 #define CPU_LOW_INIT_LOC    0x8000  // Physical location to place the lower memory init code
 
+// Local APIC address and APIC conversion (used to get cpu id by cpu init code)
+extern volatile uint8_t * CpuLocalApic;
+extern uint32_t CpuApicToCpuId[APIC_MAX_CPU];
+
+// Start and end points for lower cpu code
+extern char CpuLowerInit[1];
+extern char CpuLowerInitEnd[1];
+
+// C entry point for non boot processors
+void NO_RETURN CpuApEntry(Cpu * cpu);
+
+// Assembly part of late initialization
+void CpuLateInitAsm(void * gdtPtr);
+
 #endif

@@ -31,9 +31,13 @@ void NO_RETURN BootMain(MultibootInfo * bootInfo)
     // Setup the kernel memory manager (currently 2MB starting at 2MB address)
     (void) bootInfo;
     KMemInit(0x00200000, 0x00200000);
-    
+
+#warning Initialize interrupts before cpus
+
     // Initialize all CPUs
     CpuInitAll();
+
+#warning Enable global bit on all pages here
 
     Panic("Nothing here yet");
 }

@@ -21,9 +21,9 @@
 .code32
 .intel_syntax noprefix
 
-.global BootStart
+.global BootStart, BootGdtPtr
 
-.section .boot32, "awx", @progbits
+.section .boot32_start, "awx", @progbits
 BootSectionStart:
     # Boot stack is stored at the end of the boot section
     .set BootStack, BootSectionStart + 4096

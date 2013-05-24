@@ -30,6 +30,8 @@ SECTIONS
     . = 0x00100000;
     .boot32 ALIGN(0x1000) :
     {
+        /* .boot32_start is a special section to ensure the multiboot header is first */
+        *(.boot32_start)
         *(.boot32)
     }
 

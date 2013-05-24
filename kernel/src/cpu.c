@@ -31,13 +31,16 @@ uint32_t CpuCount;
 Cpu * CpuList[APIC_MAX_CPU];
 
 // Address of the local apics
-static volatile uint8_t * localApic;
+volatile uint8_t * CpuLocalApic;
 
 // Initial value for the APIC timer
 static uint32_t apicTimerInitial;
 
 // Converts the high 8 bits of the apic id to a cpu id
-static uint32_t apicIdToCpuId[APIC_MAX_CPU];
+uint32_t CpuApicToCpuId[APIC_MAX_CPU];
+
+// Counter containing the number of up cpus
+static volatile uint32_t initCpusUp;
 
 // Verifies the checksum of an ACPI table
 static bool AcpiVerifyChecksum(void * data, uint32_t length)
@@ -118,13 +121,13 @@ static AcpiMadt * AcpiFindMadt(void)
 // Reads the given 32-bit APIC register
 static uint32_t ApicRead32(uint16_t reg)
 {
-    return *((volatile uint32_t *) (localApic + reg));
+    return *((volatile uint32_t *) (CpuLocalApic + reg));
 }
 
 // Reads the given 32-bit APIC register
 static void ApicWrite32(uint16_t reg, uint32_t value)
 {
-    *((volatile uint32_t *) (localApic + reg)) = value;
+    *((volatile uint32_t *) (CpuLocalApic + reg)) = value;
 }
 
 // Adds a new CPU with the given APIC id
@@ -147,7 +150,7 @@ static void AddNewCpu(uint32_t apicId)
     newCpu->gdt[6] = tssAddr >> 32;
 
     // Add to tables
-    apicIdToCpuId[apicId] = CpuCount;
+    CpuApicToCpuId[apicId] = CpuCount;
     CpuList[CpuCount++] = newCpu;
 }
 
@@ -160,7 +163,7 @@ static void PopulateCpuList(void)
     if (madt)
     {
         // Store apic address
-        localApic = KMemFromPhysical(madt->localApicAddr);
+        CpuLocalApic = KMemFromPhysical(madt->localApicAddr);
 
         // Parse the table
         uint32_t apicStructLen = madt->header.length - sizeof(AcpiMadt);
@@ -179,7 +182,7 @@ static void PopulateCpuList(void)
     else
     {
         // No MADT - assume this is the only processor (handled below)
-        localApic = KMemFromPhysical(APIC_DEFAULT_ADDR);
+        CpuLocalApic = KMemFromPhysical(APIC_DEFAULT_ADDR);
     }
 
     // Ensure there's at least one processor
@@ -269,7 +272,45 @@ static void ApicSendIpi(Cpu * dest, uint32_t lowFields)
 Cpu * CpuCurrent(void)
 {
     // Get APIC id and lookup in cpu list
-    return CpuList[apicIdToCpuId[ApicRead32(APIC_REG_ID) >> 24]];
+    return CpuList[CpuApicToCpuId[ApicRead32(APIC_REG_ID) >> 24]];
+}
+
+// Performs the parts of CPU initialization which can be done later
+static void CpuLateInit(Cpu * cpu)
+{
+    // Construct GDT pointer
+    struct
+    {
+        uint8_t  pad[6];
+        uint16_t size;
+        void * ptr;
+
+    } gdtPtr;
+
+    gdtPtr.size = sizeof(cpu->gdt);
+    gdtPtr.ptr  = cpu->gdt;
+
+    // Run assembly part of initialization
+    CpuLateInitAsm(&gdtPtr.size);
+
+    // Start APIC timer
+    ApicTimerInit();
+
+    // Mark CPU as up
+    AtomicAdd(&initCpusUp, 1);
+}
+
+// Entry point for non boot processors
+void NO_RETURN CpuApEntry(Cpu * cpu)
+{
+    // Do late initialization
+    CpuLateInit(cpu);
+
+    // Just hang for the moment
+#warning Todo go into some sort of idle loop here
+    BREAKPOINT;
+    for(;;)
+        asm volatile ("hlt");
 }
 
 void CpuInitAll(void)
@@ -290,12 +331,17 @@ void CpuInitAll(void)
     ApicCalibrateTimer();
 
     // Copy lower memory code
-#warning Todo copy lower memory code
+    if (CpuCount > 1)
+        memcpy(KMemFromPhysical(CPU_LOW_INIT_LOC), CpuLowerInit, CpuLowerInitEnd - CpuLowerInit);
 
     // Send a SIPI to all other processors
     for (uint32_t i = 1; i < CpuCount; i++)
         ApicSendIpi(CpuList[i], APIC_IPI_SIPI | (CPU_LOW_INIT_LOC >> 12));
 
-    // Finally, complete initialization of the boot processor
-#warning Todo final initialization +
+    // Complete initialization of the boot processor
+    CpuLateInit(CpuList[0]);
+
+    // Wait for all other processors to complete
+    while (initCpusUp < CpuCount)
+        AtomicPause();
 }
