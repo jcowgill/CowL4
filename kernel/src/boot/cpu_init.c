@@ -1,6 +1,6 @@
 /*
- * kernel/src/cpu.c
- * CPU Information and Initialization
+ * kernel/src/boot/cpu_init.c
+ * CPU Initialization
  *
  * Copyright (C) 2013 James Cowgill
  *

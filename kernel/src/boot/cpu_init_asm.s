@@ -1,5 +1,5 @@
 /*
- * kernel/src/cpu_init.s
+ * kernel/src/boot/cpu_init_asm.s
  * CPU Initialization for APs
  *
  * Copyright (C) 2013 James Cowgill
