@@ -44,6 +44,10 @@ extern uint64_t CpuExternalBusFreq;
 // Returns the current cpu's structure
 Cpu * CpuCurrent(void);
 
+// Sends an IPI to another processor
+//  lowFields contains what type of IPI to send
+void CpuSendIpi(Cpu * dest, uint32_t lowFields);
+
 // Initializes all the CPUs (including the calling one) on the system
 void CpuInitAll(void);
 

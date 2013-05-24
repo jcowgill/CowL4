@@ -25,19 +25,8 @@
 #include "kmemory.h"
 #include "ioports.h"
 
-// Global CPU variables
-uint64_t CpuExternalBusFreq;
-uint32_t CpuCount;
-Cpu * CpuList[APIC_MAX_CPU];
-
-// Address of the local apics
-volatile uint8_t * CpuLocalApic;
-
 // Initial value for the APIC timer
 static uint32_t apicTimerInitial;
-
-// Converts the high 8 bits of the apic id to a cpu id
-uint32_t CpuApicToCpuId[APIC_MAX_CPU];
 
 // Counter containing the number of up cpus
 static volatile uint32_t initCpusUp;
@@ -116,18 +105,6 @@ static AcpiMadt * AcpiFindMadt(void)
     }
 
     return NULL;
-}
-
-// Reads the given 32-bit APIC register
-static uint32_t ApicRead32(uint16_t reg)
-{
-    return *((volatile uint32_t *) (CpuLocalApic + reg));
-}
-
-// Reads the given 32-bit APIC register
-static void ApicWrite32(uint16_t reg, uint32_t value)
-{
-    *((volatile uint32_t *) (CpuLocalApic + reg)) = value;
 }
 
 // Adds a new CPU with the given APIC id
@@ -256,25 +233,6 @@ static void ApicTimerInit(void)
     ApicWrite32(APIC_REG_TIME_INIT, apicTimerInitial);
 }
 
-// Sends an IPI to another processor
-//  lowFields contains what type of IPI to send
-static void ApicSendIpi(Cpu * dest, uint32_t lowFields)
-{
-    // Wait for previous IPI to complete
-    while (ApicRead32(APIC_REG_INTR_CMD) & APIC_IPI_BUSY)
-        AtomicPause();
-
-    // Send this IPI
-    ApicWrite32(APIC_REG_INTR_CMD + 0x10, dest->apicId << 24);
-    ApicWrite32(APIC_REG_INTR_CMD       , lowFields);
-}
-
-Cpu * CpuCurrent(void)
-{
-    // Get APIC id and lookup in cpu list
-    return CpuList[CpuApicToCpuId[ApicRead32(APIC_REG_ID) >> 24]];
-}
-
 // Performs the parts of CPU initialization which can be done later
 static void CpuLateInit(Cpu * cpu)
 {
@@ -325,7 +283,7 @@ void CpuInitAll(void)
 
     // Send an INIT to all other processors
     for (uint32_t i = 1; i < CpuCount; i++)
-        ApicSendIpi(CpuList[i], APIC_IPI_INIT);
+        CpuSendIpi(CpuList[i], APIC_IPI_INIT);
 
     // While the BIOS is initializing the other processors, we can calibrate the APIC timer
     ApicCalibrateTimer();
@@ -336,7 +294,7 @@ void CpuInitAll(void)
 
     // Send a SIPI to all other processors
     for (uint32_t i = 1; i < CpuCount; i++)
-        ApicSendIpi(CpuList[i], APIC_IPI_SIPI | (CPU_LOW_INIT_LOC >> 12));
+        CpuSendIpi(CpuList[i], APIC_IPI_SIPI | (CPU_LOW_INIT_LOC >> 12));
 
     // Complete initialization of the boot processor
     CpuLateInit(CpuList[0]);

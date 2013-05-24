@@ -163,4 +163,16 @@ void NO_RETURN CpuApEntry(Cpu * cpu);
 // Assembly part of late initialization
 void CpuLateInitAsm(void * gdtPtr);
 
+// Reads the given 32-bit APIC register
+static inline uint32_t ApicRead32(uint16_t reg)
+{
+    return *((volatile uint32_t *) (CpuLocalApic + reg));
+}
+
+// Reads the given 32-bit APIC register
+static inline void ApicWrite32(uint16_t reg, uint32_t value)
+{
+    *((volatile uint32_t *) (CpuLocalApic + reg)) = value;
+}
+
 #endif
