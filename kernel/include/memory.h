@@ -23,7 +23,7 @@
 
 #include "global.h"
 
-// Enables the global bit on all kernel pages
+// Enables the global bit on all kernel pages and unmaps the lower boot region
 void MemEnableGlobalPages(void);
 
 #endif

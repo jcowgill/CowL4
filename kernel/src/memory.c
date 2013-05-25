@@ -29,9 +29,14 @@ uint8_t MemKernelTables[0x6000] ALIGN(4096);
 
 void MemEnableGlobalPages(void)
 {
+    // Unmap lower identity mapped region
+    //  This will be flushed the first time a processor switches to another address space
+    MemKernelTables[0] = 0;
+    MemKernelTables[1] = 0;
+    MemKernelTables[2] = 0;
+    MemKernelTables[3] = 0;
+
     // Enable global bit in all PDT entries
     for (int i = 0x2001; i < 0x6000; i += 8)
-    {
         MemKernelTables[i] |= 1;        // Global flag
-    }
 }
