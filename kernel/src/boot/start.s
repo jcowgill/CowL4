@@ -99,7 +99,7 @@ BootStart:
 
     # Paging Setup - PDT Entries (loop through both tables)
     add edx, 0x2000             # Move to beginning of the first PDT
-    mov eax, 0x183              # Initialize with entry for page 0 (present, writable, 2mb, global)
+    mov eax, 0x0083             # Initialize with entry for page 0 (present, writable, 2mb)
     mov ecx, 0x1000             # 4096 entries in total (comes to 4GB)
 
 BootFillPageEntry:

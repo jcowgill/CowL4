@@ -21,6 +21,7 @@
 #include "global.h"
 #include "cpu.h"
 #include "kmemory.h"
+#include "memory.h"
 #include "multiboot.h"
 
 void NO_RETURN BootMain(MultibootInfo * bootInfo);
@@ -37,7 +38,8 @@ void NO_RETURN BootMain(MultibootInfo * bootInfo)
     // Initialize all CPUs
     CpuInitAll();
 
-#warning Enable global bit on all pages here
+    // Enable global flag in all pages
+    MemEnableGlobalPages();
 
     Panic("Nothing here yet");
 }

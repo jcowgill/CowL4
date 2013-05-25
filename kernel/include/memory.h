@@ -1,6 +1,9 @@
+#ifndef KERNEL_MEMORY_H
+#define KERNEL_MEMORY_H
+
 /*
- * kernel/src/memory.c
- * General Kernel Memory Management
+ * kernel/include/memory.h
+ * Virtual memory management
  *
  * Copyright (C) 2013 James Cowgill
  *
@@ -20,18 +23,7 @@
 
 #include "global.h"
 
-// Kernel only paging tables
-//  Initialized in start.s
-//  0000 - 0FFF = PML4 Table
-//  1000 - 1FFF = PDPT (512 GB mapped pages)
-//  2000 - 5FFF = 4 PDT Tables (covering first 4GB of physical memory)
-uint8_t MemKernelTables[0x6000] ALIGN(4096);
+// Enables the global bit on all kernel pages
+void MemEnableGlobalPages(void);
 
-void MemEnableGlobalPages(void)
-{
-    // Enable global bit in all PDT entries
-    for (int i = 0x2001; i < 0x6000; i += 8)
-    {
-        MemKernelTables[i] |= 1;        // Global flag
-    }
-}
+#endif
