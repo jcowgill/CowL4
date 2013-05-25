@@ -85,11 +85,11 @@ typedef struct AcpiMadtApic
 } AcpiMadtApic;
 
 // GDT descriptor templates
-#define GDT_KERNEL_CODE     (0x00A09BUL << 40)
-#define GDT_KERNEL_DATA     (0x00C093UL << 40)
-#define GDT_USER_CODE       (0x00A0FBUL << 40)
-#define GDT_USER_DATA       (0x00C0F3UL << 40)
-#define GDT_TSS             (0x68 | (0x801019UL << 40))
+#define GDT_KERNEL_CODE      (0x00A09BUL << 40)
+#define GDT_KERNEL_DATA      (0x00C093UL << 40)
+#define GDT_USER_CODE        (0x00A0FBUL << 40)
+#define GDT_USER_DATA        (0x00C0F3UL << 40)
+#define GDT_TSS             ((0x000089UL << 40) | 0x68)
 
 // Maximum addressable cpus (xAPIC)
 #define APIC_MAX_CPU        256

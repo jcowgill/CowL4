@@ -21,7 +21,7 @@
 .code32
 .intel_syntax noprefix
 
-.global BootStart, BootGdtPtr
+.global BootStart, BootGdtPtr, BootMemKernelTable
 
 .section .boot32_start, "awx", @progbits
 BootSectionStart:
@@ -100,7 +100,7 @@ BootStart:
     # Paging Setup - PDT Entries (loop through both tables)
     add edx, 0x2000             # Move to beginning of the first PDT
     mov eax, 0x0083             # Initialize with entry for page 0 (present, writable, 2mb)
-    mov ecx, 0x1000             # 4096 entries in total (comes to 4GB)
+    mov ecx, 0x0800             # 2048 entries in total (comes to 4GB)
 
 BootFillPageEntry:
     mov [edx], eax              # Fill entry
@@ -149,8 +149,7 @@ Boot64Start:
     mov rsp, offset BootStack + 0xFFFFFFFF80000000
 
     # Call main 64 bit code
-    mov rax, offset BootMain
-    call rax
+    call BootMain
 
     # Initialization Error Handling
     # --------------------

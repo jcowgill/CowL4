@@ -96,6 +96,10 @@ CpuInit32:
     or eax, 0x00000901      # Set SYSCALL, IA-32e, NX
     wrmsr
 
+    # Load PML4 address
+    mov edx, [BootMemKernelTable]
+    mov cr3, edx
+
     # Enable Paging
     mov eax, cr0
     or eax, 0x80000000
@@ -123,8 +127,8 @@ Boot64Start:
     mov rax, [CpuLocalApic]
     mov eax, [rax + 0x20]               # Read APIC register 20
     shr eax, 24
-    mov eax, [CpuApicToCpuId + eax*4]   # Get CPU ID from APIC ID
-    mov rdi, [CpuList + eax*8]          # Get CPU structure in rdi
+    mov eax, [CpuApicToCpuId + rax*4]   # Get CPU ID from APIC ID
+    mov rdi, [CpuList + rax*8]          # Get CPU structure in rdi
 
     # Load boot stack for this CPU (the end of the CPU structure)
     lea rsp, [rdi + 0x1000]
@@ -164,7 +168,7 @@ CpuLateInitAsm:
     mov ecx, 0xC0000081     # MSR_STAR
     wrmsr
 
-    mov rax, EntrySyscall   # Syscall entry point
+    mov rax, offset EntrySyscall
     mov rdx, rax
     shr rdx, 32
     mov ecx, 0xC0000082     # MSR_LSTAR

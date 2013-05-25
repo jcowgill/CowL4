@@ -47,21 +47,21 @@ static bool AcpiVerifyChecksum(void * data, uint32_t length)
 static AcpiRsdp * AcpiFindRsdpRange(uint32_t start, uint32_t end)
 {
     // Get start and end pointers
-    AcpiRsdp * currentPtr = KMemFromPhysical(start);
-    AcpiRsdp * endPtr = KMemFromPhysical(end);
+    uint64_t * currentPtr = KMemFromPhysical(start);
+    uint64_t * endPtr = KMemFromPhysical(end);
 
     // Do the search
-    for (; currentPtr < endPtr; currentPtr++)
+    for (; currentPtr < endPtr; currentPtr += 2)
     {
         // Found it?
-        if (memcmp(currentPtr->signature, "RSD PTR ", 8) == 0)
+        if (memcmp(currentPtr, "RSD PTR ", 8) == 0)
         {
             // Validate checksum
             if (!AcpiVerifyChecksum(currentPtr, 20))
                 continue;
 
             // OK
-            return currentPtr;
+            return (AcpiRsdp *) currentPtr;
         }
     }
 
@@ -94,7 +94,7 @@ static AcpiMadt * AcpiFindMadt(void)
             {
                 AcpiMadt * madt = KMemFromPhysical(rsdt->entry[i]);
 
-                if (memcmp(rsdt->header.type, "APIC", 4) == 0 &&
+                if (memcmp(madt->header.type, "APIC", 4) == 0 &&
                     AcpiVerifyChecksum(madt, madt->header.length))
                 {
                     // Good MADT
@@ -154,7 +154,6 @@ static void PopulateCpuList(void)
                 AddNewCpu(madt->data[i + 3]);
             }
         }
-
     }
     else
     {
@@ -261,6 +260,9 @@ static void CpuLateInit(Cpu * cpu)
 // Entry point for non boot processors
 void NO_RETURN CpuApEntry(Cpu * cpu)
 {
+    // Initialize APIC
+    ApicBaseInit();
+
     // Do late initialization
     CpuLateInit(cpu);
 
