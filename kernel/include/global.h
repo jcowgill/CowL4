@@ -33,6 +33,7 @@
 
 // Compiler attributes and intrinsics
 #define ALIGN(x)    __attribute__((aligned(x)))
+#define PACKED      __attribute__((packed))
 #define NO_RETURN   __attribute__((noreturn))
 #define CLZ(x)      __builtin_clzl(x)
 

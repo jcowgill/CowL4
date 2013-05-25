@@ -20,6 +20,7 @@
 
 #include "global.h"
 #include "cpu.h"
+#include "intr.h"
 #include "kmemory.h"
 #include "memory.h"
 #include "multiboot.h"
@@ -33,7 +34,8 @@ void NO_RETURN BootMain(MultibootInfo * bootInfo)
     (void) bootInfo;
     KMemInit(0x00200000, 0x00200000);
 
-#warning Initialize interrupts before cpus
+    // Setup IDT
+    IntrInitIdt();
 
     // Initialize all CPUs
     CpuInitAll();

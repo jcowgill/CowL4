@@ -1,5 +1,5 @@
 /*
- * kernel/src/trap.s
+ * kernel/src/intr_asm.s
  * Entry points into the kernel
  *
  * Copyright (C) 2013 James Cowgill
@@ -25,48 +25,9 @@
 .global IntrIdt
 .global IntrSetup
 
-.bss
-IntrIdt:
-    # Interrupt descriptor table
-    .align 4096
-    .skip 4096
+.global IntrEntryStart
 
 .text
-IntrSetup:
-    # Initializes the interrupt descriptor table
-
-    # Reset loop counter
-    xor rcx, rcx
-
-.idtLoopStart:
-    # Construct lower half in rax
-    mov rdx, IntrEntryStart
-    lea rdx, [IntrEntryStart + rcx]
-
-    mov rax, rdx
-    mov ax, 0x8E00      # Entry Type (64-bit Ring 0 Interrupt)
-    shl rax, 16
-    mov al, 0x08        # Destination Segment
-    shl rax, 16
-    mov ax, dx
-
-    # Save lower half
-    mov [IntrIdt + 2 * rcx], rax
-
-    # Save higher half
-    mov dword ptr [IntrIdt + 2 * rcx + 8], 0xFFFFFFFF
-
-    # Loop until counter is too high
-    add rcx, 8
-    cmp rcx, 0x1000
-    jne .idtLoopStart
-
-    # Allow Ring 3 code to issue breakpoints
-    mov byte ptr [IntrIdt + (16 * 3 + 5)], 0xEE
-                        # Entry Type (64-bit Ring 3 Interrupt)
-
-    ret
-
 IntrEntryStart:
     # Code for each interrupt entry point
     #  All isr codes are a fixed 8 bytes
