@@ -152,6 +152,10 @@ static void PopulateCpuList(void)
             {
                 // Add this cpu to the tables
                 AddNewCpu(madt->data[i + 3]);
+
+                // Break if we've reached the CPU limit
+                if (CpuCount >= APIC_MAX_CPU)
+                    break;
             }
         }
     }
