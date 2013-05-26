@@ -197,7 +197,7 @@ BootGdt:
     .word 0         # Word to align pointer
 
 BootGdtPtr:
-    .word 16        # 2 GDT entries
+    .word 15        # 2 GDT entries
     .long BootGdt
 
     .byte 0, 0, 0, 0, 0, 0x9B, 0xA0, 0     #Selector 08h - Ring 0 Code (64-Bits)

@@ -25,7 +25,7 @@
 static IntrIdtEntry IntrIdt[256] ALIGN(4096);
 
 // IDT Pointer
-const IntrIdtPtrType IntrIdtPtr = { sizeof(IntrIdt), IntrIdt };
+const IntrIdtPtrType IntrIdtPtr = { sizeof(IntrIdt) - 1, IntrIdt };
 
 // ISR Entry Points
 extern uint64_t IntrEntryStart[256];

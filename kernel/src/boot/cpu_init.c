@@ -248,7 +248,7 @@ static void CpuLateInit(Cpu * cpu)
 
     } gdtPtr;
 
-    gdtPtr.size = sizeof(cpu->gdt);
+    gdtPtr.size = sizeof(cpu->gdt) - 1;
     gdtPtr.ptr  = cpu->gdt;
 
     // Run assembly part of initialization

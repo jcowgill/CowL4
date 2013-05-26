@@ -58,7 +58,7 @@ Gdt32:
     .word 0
 
 Gdt32Ptr:
-    .word 24        # 3 GDT entries
+    .word 24 - 1        # 3 GDT entries
     .long CPU_LOW_INIT_LOC + (Gdt32 - CpuLowerInit)
 
 	.byte 0xFF, 0xFF, 0, 0, 0, 0x9A, 0xCF, 0	# Selector 08h - Ring 0 Code
