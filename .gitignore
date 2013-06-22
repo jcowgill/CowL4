@@ -1,2 +1,9 @@
 # Build directory
-build/
+/build/
+
+# Backup files
+*~
+*.bak
+
+# Grub test image
+/grub2.img

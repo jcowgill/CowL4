@@ -18,28 +18,57 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Compilers
-CC := clang
-AS := amd64-elf-as
-LD := amd64-elf-ld
+# Use clang unless overridden
+CC          := clang
 
 # Global Compiler Options
-CF_GLOBAL := -ccc-host-triple amd64-elf -Wall -Wextra -g -std=gnu11 -fno-common
-AF_GLOBAL := -g
-LF_GLOBAL := -n
+CF_GLOBAL   := -Wall -Wextra -g -std=gnu11 -fno-common
+AF_GLOBAL   := -g
+LF_GLOBAL   := -n
 
 # Build directory
-BUILD_DIR := build
+BUILD_DIR   := build
 
-# List of all possible programs
-TARGETS := kernel
+# List of all projects to build
+TARGETS     := kernel fatcli
 
-# Global targets
-.PHONY: all clean $(TARGETS)
+# Build command lines
+#  COMPILE      = C Compiler
+#  ASSEMBLE     = Gnu Assembler
+#  LINK         = Gnu Linker
+#  LINK_NATIVE  = LD via GCC (for executables running on build host)
+MKDIR       = @mkdir -p $(dir $@)
+COMPILE     = $(MKDIR); $(CC) $(CF_GLOBAL) $(CF_LOCAL) -o $@ -c $<
+ASSEMBLE    = $(MKDIR); $(AS) $(AF_GLOBAL) $(AF_LOCAL) -o $@ -c $<
+LINK        = $(MKDIR); $(LD) $(LF_GLOBAL) $(LF_LOCAL) -o $@ $(filter-out %.ld, $^)
+LINK_NATIVE = $(MKDIR); $(CC) $(LF_LOCAL) -o $@ $^
+
+# Global functions
+#  GEN_OBJS = Generates a list of .o files from a list of sources
+GEN_OBJS    = $(addprefix $(BUILD_DIR)/, $(addsuffix .o, $(basename $(1))))
+
+# Add all target first
+.PHONY: all $(TARGETS)
 all: $(TARGETS)
 
+# Include all project rule files
+$(foreach dir, $(TARGETS), $(eval include $(dir)/Rules.mk))
+
+# General build patterns
+.SUFFIXES:
+
+$(BUILD_DIR)/%.o: %.c
+	$(COMPILE)
+
+$(BUILD_DIR)/%.o: %.s
+	$(ASSEMBLE)
+
+# Additional global targets
+.PHONY: clean
 clean:
 	rm -r $(BUILD_DIR)
 
-# Inlucde target's rules
-include $(addsuffix /Rules.mk, $(TARGETS))
+# This currently installs kernel.elf into the grub2.img file (1048576 = 512 * 2048)
+.PHONY: install
+install: kernel fatcli
+	$(BUILD_DIR)/fatcli.elf grub2.img write kernel.elf build/kernel.elf

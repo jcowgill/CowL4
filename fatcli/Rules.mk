@@ -1,6 +1,6 @@
 #
-#  kernel/Rules.mk
-#  Makefile rules for the kernel
+#  fatcli/Rules.mk
+#  Makefile rules for fatcli
 #
 #  Copyright (C) 2013 James Cowgill
 #
@@ -19,32 +19,25 @@
 #
 
 # Compiler options
-CF_$(dir)   := -ffreestanding -I$(dir)/include -mcmodel=kernel -mno-sse -mno-mmx -msoft-float
-LF_$(dir)   := -T $(dir)/src/kernel.ld
+CF_$(dir)   := -I$(dir)/include
 
 # Find sources and includes
-SRC_$(dir)  := $(wildcard $(dir)/src/*.c) $(wildcard $(dir)/src/boot/*.c)
+SRC_$(dir)  := $(wildcard $(dir)/src/*.c)
 INC_$(dir)  := $(wildcard $(dir)/include/*.h)
-SRCA_$(dir) := $(wildcard $(dir)/src/*.s) $(wildcard $(dir)/src/boot/*.s)
 
 # Generate objects list
 OBJ_$(dir)  := $(call GEN_OBJS, $(SRC_$(dir)))
-OBJA_$(dir) := $(call GEN_OBJS, $(SRCA_$(dir)))
-
-# List if linking inputs
-LINK_IN_$(dir)  := $(OBJ_$(dir)) $(OBJA_$(dir)) $(dir)/src/kernel.ld
-
-#############
 
 # C Sources depend on all includes (the simple way)
 $(SRC_$(dir)):  $(INC_$(dir))
+
+###############
 
 # Set build flags
 $(OBJ_$(dir)):  CF_LOCAL := $(CF_$(dir))
 
 # Linking rules
-$(BUILD_DIR)/$(dir).elf: LF_LOCAL := $(LF_$(dir))
-$(BUILD_DIR)/$(dir).elf: $(LINK_IN_$(dir))
-	$(LINK)
+$(BUILD_DIR)/$(dir).elf: $(OBJ_$(dir))
+	$(LINK_NATIVE)
 
 $(dir): $(BUILD_DIR)/$(dir).elf
