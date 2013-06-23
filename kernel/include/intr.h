@@ -23,6 +23,33 @@
 
 #include "global.h"
 
+// Interrupt context (all registers + information saved on an interrupt)
+typedef struct IntrContext
+{
+    // General Purpose Registers
+    uint64_t rax;
+    uint64_t rcx;
+    uint64_t rdx;
+    uint64_t rsi;
+    uint64_t rdi;
+    uint64_t r8;
+    uint64_t r9;
+    uint64_t r10;
+    uint64_t r11;
+
+    // Interrupt Information
+    uint64_t intrNumber;
+    uint64_t intrError;
+
+    // Information pushed by the CPU
+    uint64_t rip;
+    uint64_t cs;
+    uint64_t rflags;
+    uint64_t rsp;
+    uint64_t ss;
+
+} IntrContext;
+
 // Type of one IDT entry
 typedef struct IntrIdtEntry
 {
@@ -60,5 +87,8 @@ void IntrInitIdt(void);
 
 // Initializes the PIC
 void IntrInitPic(void);
+
+// Interrupt handler entry point
+void IntrHandler(IntrContext context);
 
 #endif

@@ -22,144 +22,88 @@
 .intel_syntax noprefix
 
 .global EntrySyscall
-.global IntrIdt
-.global IntrSetup
-
-.global IntrEntryStart
+# All ISRs are also global
 
 .text
-IntrEntryStart:
-    # Code for each interrupt entry point
-    #  All isr codes are a fixed 8 bytes
 
-    # Exception Handling
-    #
-    # Special kernel handling
-    # --------
-    # 14 PF  Page Fault
-    #  2 NMI (for cross processor invlpg?)
-    #  7 NM  Device not available (do FPU state switch)
-    #
-    # Causes panic (always)
-    # --------
-    #  1 DB Debug Exception
-    #  8 DF Double Fault
-    # 10 TS Invalid TSS
-    # 18 MC Machine Check
-    #
-    # Ignored (always)
-    # --------
-    #  4 OF Overflow (should be impossible to generate)
-    #  5 BR Bound Range (should be impossible to generate)
-    #  9    Coprocessor Segment Overrun (Only used on 386 processors)
-    # 20-31 No Exception Produced
-    #
-    # ALways handled by the thread's exception handler
-    #  - Except when produced from kernel code (causes panic then)
-    # --------
-    #  0 DE Division By 0
-    #  3 BP Breakpoint
-    #  6 UD Invalid Opcode
-    # 11 NP Segment Not Present
-    # 12 SS Stack Fault
-    # 13 GP General Protection
-    # 16 MF x86 FPU Exception
-    # 17 AC Alignment Check
-    # 19 XM SIMD Exception
-    #
-
-.macro IsrCode, num:req, jump:req
-    # Save isr number and jump to common entry point
-    push rax        # 1 byte
-    mov al, \num    # 2 bytes
-    jmp.d32 \jump   # 5 bytes
+.macro IsrNormal, num:req
+    # Normal ISR (without error code)
+.global IntrIsr\num
+IntrIsr\num:
+    push 0
+    push \num
+    jmp IntrEntry
 .endm
 
-.macro IsrCodeIgnore, num
-    # Ignore interrupt (no error code)
-    iretq           # 2 bytes
-    .skip 6         # 6 bytes
+.macro IsrErrorCode, num:req
+    # ISR with an error code
+.global IntrIsr\num
+IntrIsr\num:
+    push \num
+    jmp IntrEntry
 .endm
 
-    IsrCode        0, IntrEntryNormal
-    IsrCode        1, IntrEntryPanicNoError
-    IsrCode        2, IntrEntryNormal
-    IsrCode        3, IntrEntryNormal
-    IsrCodeIgnore #4
-    IsrCodeIgnore #5
-    IsrCode        6, IntrEntryNormal
-    IsrCode        7, IntrEntryNormal
-    IsrCode        8, IntrEntryPanic
-    IsrCodeIgnore #9
-    IsrCode       10, IntrEntryPanic
-    IsrCode       11, IntrEntryErrorCode
-    IsrCode       12, IntrEntryErrorCode
-    IsrCode       13, IntrEntryErrorCode
-    IsrCode       14, IntrEntryErrorCode
-    IsrCode       15, IntrEntryNormal
-    IsrCode       16, IntrEntryNormal
-    IsrCode       17, IntrEntryErrorCode
-    IsrCode       18, IntrEntryPanicNoError
-    IsrCode       19, IntrEntryNormal
+    # CPU Exceptions
+    IsrNormal       0       # DE  - Division By Zero
+    IsrNormal       1       # DB  - Debug Exception
+    #IsrNormal      2       # NMI - Non Maskable Interrupt
+    IsrNormal       3       # BP  - Breakpoint
+    #IsrNormal      4       # OF  - Overflow (impossible in 64-bit mode)
+    #IsrNormal      5       # BR  - Bound Range Exceeded (impossible in 64-bit mode)
+    IsrNormal       6       # UD  - Invalid Opcode
+    IsrNormal       7       # NM  - FPU Not Available
+    IsrNormal       8       # DF  - Double Fault
+    #IsrNormal      9       # --  - Coprocessor Overrun (impossible in 64-bit mode)
+    IsrNormal       10      # TS  - Invalid TSS
+    IsrErrorCode    11      # NP  - Segment Not Present
+    IsrErrorCode    12      # SS  - Stack Fault
+    IsrErrorCode    13      # GP  - General Protection Fault
+    IsrErrorCode    14      # PF  - Page Fault
+    #IsrNormal      15      # --  - Reserved
+    IsrNormal       16      # MP  - FPU Exception
+    IsrErrorCode    17      # AC  - Alignment Check
+    IsrNormal       18      # MC  - Machine Check
+    IsrNormal       19      # XM  - SIMD Exception
+    #IsrNormal      20      # VE  - Virtualization Exception
 
-    # Ignore unused exceptions
-.rept 32 - 20
-    IsrCodeIgnore
-.endr
+    # APIC Interrupts
+    IsrNormal       32      # Spurious Interrupt
+    IsrNormal       33      # Timer Interrupt
 
-    # Default entries for IRQ interrupts
-.set i, 32
-.rept 256 - 32
-    IsrCode i, IntrEntryNormal
-    .set i, i + 1
-.endr
+    # Hardware interrupts (all use one isr)
+    IsrNormal       48      # Hardware interrupts
 
-IntrEntryNormal:
-    # Change stack from (<blank> rax)
-    #                to (    rax rsi)
-    xchg rsi, [rsp]
-    push rsi
+IntrEntry:
+    # Interrupt entry point
+    #  Error code and interrupt number already pushed on the stack
 
-    # Jump to common entry point
-    jmp IntrEntryNormal
-
-IntrEntryErrorCode:
-    # Change stack from (rax <error>)
-    #                to (rax rsi    )
-    xchg rsi, [rsp + 8]
-
-IntrEntryCommon:
-    # Common interrupt entry code
-    #  Push the rest of the state (rax and rsi already saved)
-    push rcx
-    push rdx
-    push rdi
-    push r8
-    push r9
-    push r10
+    # Push anything which isn't saved across C function calls
     push r11
-    swapgs
+    push r10
+    push r9
+    push r8
+    push rdi
+    push rsi
+    push rdx
+    push rcx
+    push rax
 
-    # Move error number to first argument
-    movzx rdi, al
+    # Call interrupt handling function
+    call IntrHandler
 
-    # Call interrupt C routine
-    #  arg1 = interrupt number
-    #  arg2 = error code
-    xchg bx, bx
-
-    # Restore state and return
-    swapgs
-    pop r11
-    pop r10
-    pop r9
-    pop r8
-    pop rdi
-    pop rdx
-    pop rcx
-
+    # Pop registers
     pop rax
+    pop rcx
+    pop rdx
     pop rsi
+    pop rdi
+    pop r8
+    pop r9
+    pop r10
+    pop r11
+
+    # Pop interrupt and error numbers, and complete interrupt
+    add rsp, 16
     iretq
 
 IntrEntryPanicNoError:
