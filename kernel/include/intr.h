@@ -79,6 +79,28 @@ typedef struct IntrIdtPtrType
 #define INTR_TYPE_KERN      0x8E    // 64-bit Ring 0
 #define INTR_TYPE_USER      0xEE    // 64-bit Ring 3
 
+// Interrupt number constants
+#define INTR_CPU_DE         0       // Division by 0
+#define INTR_CPU_DB         1       // Debug Exception
+#define INTR_CPU_BP         3       // Breakpoint
+#define INTR_CPU_UD         6       // Invalid Opcode
+#define INTR_CPU_NM         7       // FPU Not Available
+#define INTR_CPU_DF         8       // Double Fault
+#define INTR_CPU_TS         10      // Invalid TSS
+#define INTR_CPU_NP         11      // Segment Not Present
+#define INTR_CPU_SS         12      // Stack Fault
+#define INTR_CPU_GP         13      // General Protection Fault
+#define INTR_CPU_PF         14      // Page Fault
+#define INTR_CPU_MF         16      // FPU Exception
+#define INTR_CPU_AC         17      // Alignment Check
+#define INTR_CPU_MC         18      // Machine Check
+#define INTR_CPU_XM         19      // SIMD Exception
+
+#define INTR_APIC_SPURIOUS  32      // APIC Spurious Interrupt
+#define INTR_APIC_TIMER     33      // APIC Local Timer
+
+#define INTR_IRQ            48      // Hardware Interrupt
+
 // Pointer to the IDT
 extern const IntrIdtPtrType IntrIdtPtr;
 

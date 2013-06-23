@@ -22,9 +22,13 @@
 .intel_syntax noprefix
 
 .global EntrySyscall
+.global IntrIsrIgnore
 # All ISRs are also global
 
 .text
+IntrIsrIgnore:
+    # Ignored interrupts
+    iretq
 
 .macro IsrNormal, num:req
     # Normal ISR (without error code)
@@ -67,7 +71,7 @@ IntrIsr\num:
     #IsrNormal      20      # VE  - Virtualization Exception
 
     # APIC Interrupts
-    IsrNormal       32      # Spurious Interrupt
+    #IsrNormal      32      # Spurious Interrupt (always ignored)
     IsrNormal       33      # Timer Interrupt
 
     # Hardware interrupts (all use one isr)

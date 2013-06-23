@@ -22,6 +22,7 @@
 #include "atomic.h"
 #include "cpu.h"
 #include "cpupriv.h"
+#include "intr.h"
 
 // Global CPU variables
 uint64_t CpuExternalBusFreq;
@@ -49,4 +50,30 @@ Cpu * CpuCurrent(void)
 {
     // Get APIC id and lookup in cpu list
     return CpuList[CpuApicToCpuId[ApicRead32(APIC_REG_ID) >> 24]];
+}
+
+int CpuGetHardwareIntr(void)
+{
+    // Search the ISR for the highest priority interrupt
+    for (uint16_t reg = APIC_REG_ISR + 0x70; reg >= APIC_REG_ISR; reg -= 0x10)
+    {
+        uint32_t isrValue = ApicRead32(reg);
+
+        if (isrValue != 0)
+        {
+            // Calculate and return irq number
+            int highestBit = (sizeof(long) * 8) - CLZ(isrValue) - 1;
+            int regOffset  = (reg - APIC_REG_ISR) * 2;
+
+            return highestBit + regOffset - INTR_IRQ;
+        }
+    }
+
+    // No interrupts found
+    return -1;
+}
+
+void CpuSendEoi(void)
+{
+    ApicWrite32(APIC_REG_EOI, 1);
 }

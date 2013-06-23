@@ -48,6 +48,13 @@ Cpu * CpuCurrent(void);
 //  lowFields contains what type of IPI to send
 void CpuSendIpi(Cpu * dest, uint32_t lowFields);
 
+// Gets the current hardware interrupt number (IRQ)
+//  Returns number less than zero if there was no interrupt requested
+int CpuGetHardwareIntr(void);
+
+// Sends an end-of-interrupt signal
+void CpuSendEoi(void);
+
 // Initializes all the CPUs (including the calling one) on the system
 void CpuInitAll(void);
 
