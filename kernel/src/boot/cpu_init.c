@@ -247,7 +247,6 @@ static void ApicBaseInit(void)
     ApicWrite32(APIC_REG_TIME_DIV,  0);     // = divide by 2
 
     // Disable all local interrupts
-    ApicWrite32(APIC_REG_LVT_CMCI,  APIC_LVT_DISABLE);
     ApicWrite32(APIC_REG_LVT_TIMER, APIC_LVT_DISABLE);
     ApicWrite32(APIC_REG_LVT_TSR,   APIC_LVT_DISABLE);
     ApicWrite32(APIC_REG_LVT_PERF,  APIC_LVT_DISABLE);
