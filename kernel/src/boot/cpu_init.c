@@ -167,8 +167,8 @@ static void ParseAcpiTables(void)
             else if (madt->data[i] == ACPI_MADT_IOAPIC)
             {
                 // IO APIC Entry
-                uint32_t addr = *(uint32_t*) (madt->data + 4);
-                uint32_t irqBase = *(uint32_t*) (madt->data + 8);
+                uint32_t addr = *(uint32_t*) &madt->data[i + 4];
+                uint32_t irqBase = *(uint32_t*) &madt->data[i + 8];
 
                 IntrInitIoApic(addr, irqBase);
                 ioApicSetup = true;
@@ -176,9 +176,9 @@ static void ParseAcpiTables(void)
             else if (madt->data[i] == ACPI_MADT_IRQOVERRIDE)
             {
                 // IRQ Override
-                uint32_t apicIrq = *(uint32_t*) (madt->data + 4);
+                uint32_t apicIrq = *(uint32_t*) &madt->data[i + 4];
 
-                IntrInitSetOverride(madt->data[3], apicIrq, madt->data[8]);
+                IntrInitSetOverride(madt->data[i + 3], apicIrq, madt->data[i + 8]);
             }
         }
     }

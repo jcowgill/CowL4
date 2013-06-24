@@ -131,7 +131,7 @@ static uint32_t IoApicRead32(volatile uint32_t * ioApicAddr, uint32_t reg)
 {
     // Write reg to IOREGSEL and read IOWIN
     ioApicAddr[0] = reg;
-    return ioApicAddr[2];
+    return ioApicAddr[4];
 }
 
 // Writes to an IO APIC register
@@ -139,7 +139,7 @@ static void IoApicWrite32(volatile uint32_t * ioApicAddr, uint32_t reg, uint32_t
 {
     // Write reg to IOREGSEL and then write to IOWIN
     ioApicAddr[0] = reg;
-    ioApicAddr[2] = value;
+    ioApicAddr[4] = value;
 }
 
 void IntrInitIoApic(uint32_t addr, uint32_t baseIrq)
