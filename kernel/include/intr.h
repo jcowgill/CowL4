@@ -101,14 +101,33 @@ typedef struct IntrIdtPtrType
 
 #define INTR_IRQ            48      // Hardware Interrupt
 
+// IO APIC registers
+#define INTR_IOAPIC_ID      0x00
+#define INTR_IOAPIC_VER     0x01
+#define INTR_IOAPIC_ARB     0x02
+#define INTR_IOAPIC_TABLE   0x10
+
+// Maximum number of IO APICs
+#define INTR_MAX_IOAPIC     8
+
+// Interrupt flags
+#define INTR_IOAPIC_MASKED  0x00010000      // Masked interrupt
+#define INTR_IOAPIC_LEVEL   0x00008000      // Level triggered
+#define INTR_IOAPIC_POL_LOW 0x00002000      // Low polarity
+
+
 // Pointer to the IDT
 extern const IntrIdtPtrType IntrIdtPtr;
 
 // Creates the interrupt descriptor table
 void IntrInitIdt(void);
 
-// Initializes the PIC
-void IntrInitPic(void);
+// Initializes an IO APIC
+void IntrInitIoApic(uint32_t addr, uint32_t baseIrq);
+
+// Sets an override redirecting an ISA interrupt to a different IO APIC interrupt
+//  flags contain the polarity and trigger mode flags for the IO APIC
+void IntrInitSetOverride(uint8_t isaIrq, uint32_t apicIrq, uint8_t flags);
 
 // Interrupt handler entry point
 void IntrHandler(IntrContext context);

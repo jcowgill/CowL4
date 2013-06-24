@@ -22,8 +22,9 @@
 #include "atomic.h"
 #include "cpu.h"
 #include "cpupriv.h"
-#include "kmemory.h"
 #include "ioports.h"
+#include "intr.h"
+#include "kmemory.h"
 
 // Initial value for the APIC timer
 static uint32_t apicTimerInitial;
@@ -131,9 +132,12 @@ static void AddNewCpu(uint32_t apicId)
     CpuList[CpuCount++] = newCpu;
 }
 
-// Populates the global CPU list with all the installed CPUs
-static void PopulateCpuList(void)
+// Parses the ACPI tables
+//  Populates the global CPU list with all the installed CPUs
+static void ParseAcpiTables(void)
 {
+    bool ioApicSetup = false;
+
     // Get the MADT from the ACPI tables
     AcpiMadt * madt = AcpiFindMadt();
 
@@ -147,15 +151,34 @@ static void PopulateCpuList(void)
 
         for (uint32_t i = 0; i < apicStructLen; i += madt->data[i + 1])
         {
-            // Must be an enabled processor
-            if (madt->data[i] == ACPI_MADT_APIC && (madt->data[i + 4] & ACPI_MADT_APIC_EN))
+            if (madt->data[i] == ACPI_MADT_APIC)
             {
-                // Add this cpu to the tables
-                AddNewCpu(madt->data[i + 3]);
+                // CPU entry
+                if (madt->data[i + 4] & ACPI_MADT_APIC_EN)
+                {
+                    // Add this cpu to the tables
+                    AddNewCpu(madt->data[i + 3]);
 
-                // Break if we've reached the CPU limit
-                if (CpuCount >= APIC_MAX_CPU)
-                    break;
+                    // Break if we've reached the CPU limit
+                    if (CpuCount >= APIC_MAX_CPU)
+                        break;
+                }
+            }
+            else if (madt->data[i] == ACPI_MADT_IOAPIC)
+            {
+                // IO APIC Entry
+                uint32_t addr = *(uint32_t*) (madt->data + 4);
+                uint32_t irqBase = *(uint32_t*) (madt->data + 8);
+
+                IntrInitIoApic(addr, irqBase);
+                ioApicSetup = true;
+            }
+            else if (madt->data[i] == ACPI_MADT_IRQOVERRIDE)
+            {
+                // IRQ Override
+                uint32_t apicIrq = *(uint32_t*) (madt->data + 4);
+
+                IntrInitSetOverride(madt->data[3], apicIrq, madt->data[8]);
             }
         }
     }
@@ -168,6 +191,14 @@ static void PopulateCpuList(void)
     // Ensure there's at least one processor
     if (CpuCount == 0)
         AddNewCpu(ApicRead32(APIC_REG_ID) >> 24);
+
+    // Ensure at least one IO APIC has been setup
+    if (!ioApicSetup)
+    {
+        // Try the most common IO APIC settings
+        IntrInitIoApic(0xFEC00000, 0);
+        IntrInitSetOverride(0, 2, 0);       // Map IRQ 0 -> IRQ 2 for IO APICs
+    }
 }
 
 // Calculates the settings for the APIC timer which
@@ -281,8 +312,8 @@ void CpuInitAll(void)
 {
     Assert(CpuCount == 0);
 
-    // Find all CPUs
-    PopulateCpuList();
+    // Parse the ACPI tables (finding all CPUs and IO APICs)
+    ParseAcpiTables();
 
     // Initialize APIC
     ApicBaseInit();

@@ -24,7 +24,9 @@
 #include "global.h"
 
 // MADT entry types
-#define ACPI_MADT_APIC      0
+#define ACPI_MADT_APIC          0
+#define ACPI_MADT_IOAPIC        1
+#define ACPI_MADT_IRQOVERRIDE   2
 
 // APIC flag which must be true to use that CPU
 #define ACPI_MADT_APIC_EN   1

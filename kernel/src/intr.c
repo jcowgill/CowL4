@@ -20,7 +20,25 @@
 
 #include "global.h"
 #include "cpu.h"
+#include "ioports.h"
 #include "intr.h"
+#include "kmemory.h"
+
+// IO APIC Information
+typedef struct IntrIoApic
+{
+    // Base address (NULL = no io apic here)
+    volatile uint32_t * baseAddr;
+
+    // First IRQ and number of IRQs
+    uint32_t baseIrq;
+    uint32_t maxIrqs;
+
+} IntrIoApic;
+
+// IO APIC Storage
+//  All IO APICs are stores from start to end with no gaps (of baseAddr == NULL)
+static IntrIoApic IntrIoApicData[INTR_MAX_IOAPIC];
 
 // The global IDT
 static IntrIdtEntry IntrIdt[256] ALIGN(4096);
@@ -102,11 +120,121 @@ void IntrInitIdt(void)
 
     // Allow INT 3 (breakpoints) to be called from user mode
     IntrIdt[INTR_CPU_BP].type = INTR_TYPE_USER;
+
+    // Disable legacy PIC
+    IoOutB(0xA1, 0xFF);
+    IoOutB(0x21, 0xFF);
 }
 
-void IntrInitPic(void)
+// Reads an IO APIC register
+static uint32_t IoApicRead32(volatile uint32_t * ioApicAddr, uint32_t reg)
 {
-    // Probably will implement the IO APIC at some point in the future
+    // Write reg to IOREGSEL and read IOWIN
+    ioApicAddr[0] = reg;
+    return ioApicAddr[2];
+}
+
+// Writes to an IO APIC register
+static void IoApicWrite32(volatile uint32_t * ioApicAddr, uint32_t reg, uint32_t value)
+{
+    // Write reg to IOREGSEL and then write to IOWIN
+    ioApicAddr[0] = reg;
+    ioApicAddr[2] = value;
+}
+
+void IntrInitIoApic(uint32_t addr, uint32_t baseIrq)
+{
+    volatile uint32_t * ioApicAddr = KMemFromPhysical(addr);
+
+    // Validate arguments
+    if (addr == 0)
+        Panic("IO APIC has null address in ACPI tables");
+
+    uint32_t id  = IoApicRead32(ioApicAddr, INTR_IOAPIC_ID);
+    uint32_t ver = IoApicRead32(ioApicAddr, INTR_IOAPIC_VER);
+
+    // Bit of a hack to ensure this is an IO APIC
+    if (id == ver)
+        Panic("IO APIC doesn't work / exist");
+
+    // Get number of IRQs on this IO APIC
+    uint32_t maxIrqs = (ver >> 16) & 0xFF;
+
+    // Find a slot for this IO APIC
+    int ioApicIndex = 0;
+    for (ioApicIndex = 0; ioApicIndex < INTR_MAX_IOAPIC; ioApicIndex++)
+    {
+        if (IntrIoApicData[ioApicIndex].baseAddr == NULL)
+            break;
+    }
+
+    if (ioApicIndex == INTR_MAX_IOAPIC)
+        Panic("Too many IO APICs");
+
+    // Store data and initialize the IO APIC to default values
+    IntrIoApicData[ioApicIndex].baseAddr = ioApicAddr;
+    IntrIoApicData[ioApicIndex].baseIrq = baseIrq;
+    IntrIoApicData[ioApicIndex].maxIrqs = maxIrqs;
+
+    for (uint32_t i = 0; i < maxIrqs; i++)
+    {
+        // Write destination (always to CPU 0)
+        IoApicWrite32(ioApicAddr, INTR_IOAPIC_TABLE + 2 * i + 1, 0);
+
+        // Write flags + interrupt number
+        uint32_t lowerFlags = (INTR_IRQ + baseIrq + i) | INTR_IOAPIC_MASKED;
+        IoApicWrite32(ioApicAddr, INTR_IOAPIC_TABLE + 2 * i, lowerFlags);
+    }
+}
+
+void IntrInitSetOverride(uint8_t isaIrq, uint32_t apicIrq, uint8_t flags)
+{
+    // Find the IO APIC containing isaIrq
+    int ioApicIndex = 0;
+    for (ioApicIndex = 0; ioApicIndex < INTR_MAX_IOAPIC; ioApicIndex++)
+    {
+        if (IntrIoApicData[ioApicIndex].baseAddr == NULL)
+        {
+            // Interrupt not found - ignore request
+            return;
+        }
+
+        uint32_t upper = IntrIoApicData[ioApicIndex].baseIrq +
+                         IntrIoApicData[ioApicIndex].maxIrqs;
+
+        if (IntrIoApicData[ioApicIndex].baseIrq <= isaIrq && isaIrq < upper)
+        {
+            // IO APIC found
+            break;
+        }
+    }
+
+    // Exit if no IO APIC found
+    if (ioApicIndex == INTR_MAX_IOAPIC)
+        return;
+
+    // Get old table flags
+    volatile uint32_t * ioApicAddr = IntrIoApicData[ioApicIndex].baseAddr;
+    uint32_t reg = INTR_IOAPIC_TABLE + 2 * (isaIrq - IntrIoApicData[ioApicIndex].baseIrq);
+
+    uint32_t value = IoApicRead32(ioApicAddr, reg);
+
+    // Overwrite new IRQ
+    value = (value & 0xFFFFFF00) | (uint8_t) apicIrq;
+
+    // Overwrite polarity and trigger mode
+    if ((flags & 0x3) == 0x3)
+        value |= INTR_IOAPIC_POL_LOW;
+    else
+        value &= ~INTR_IOAPIC_POL_LOW;
+
+    if ((flags & 0xC) == 0xC)
+        value |= INTR_IOAPIC_LEVEL;
+    else
+        value &= ~INTR_IOAPIC_LEVEL;
+
+    // Rewrite IRQ register
+    IoApicWrite32(ioApicAddr, reg, value);
 }
 
 void IntrHandler(IntrContext context)
