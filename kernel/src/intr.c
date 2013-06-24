@@ -64,11 +64,11 @@ void IntrIsr17();
 void IntrIsr18();
 void IntrIsr19();
 
-// APIC Interrupts
-void IntrIsr33();
-
 // Hardware Interrupts
-void IntrIsr48();
+void IntrIsr32();
+
+// APIC Interrupts
+void IntrIsr240();
 
 // Fills in an IDT entry with the given ISR
 static void FillIdtEntry(int index, void (* isr))
@@ -110,13 +110,13 @@ void IntrInitIdt(void)
     FillIdtEntry(19, IntrIsr19);
     FillIdtEntry(20, IntrIsrIgnore);
 
-    // Fill APIC Interrupts
-    FillIdtEntry(32, IntrIsrIgnore);
-    FillIdtEntry(33, IntrIsr33);
-
     // Fill Hardware Interrupts
-    for (int i = 0x30; i < 0x100; i++)
-        FillIdtEntry(i, IntrIsr48);
+    for (int i = 0x20; i < 0xF0; i++)
+        FillIdtEntry(i, IntrIsr32);
+
+    // Fill APIC Interrupts
+    FillIdtEntry(240, IntrIsr240);
+    FillIdtEntry(255, IntrIsrIgnore);
 
     // Allow INT 3 (breakpoints) to be called from user mode
     IntrIdt[INTR_CPU_BP].type = INTR_TYPE_USER;

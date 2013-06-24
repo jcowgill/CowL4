@@ -96,10 +96,10 @@ typedef struct IntrIdtPtrType
 #define INTR_CPU_MC         18      // Machine Check
 #define INTR_CPU_XM         19      // SIMD Exception
 
-#define INTR_APIC_SPURIOUS  32      // APIC Spurious Interrupt
-#define INTR_APIC_TIMER     33      // APIC Local Timer
+#define INTR_IRQ            32      // Hardware Interrupt
 
-#define INTR_IRQ            48      // Hardware Interrupt
+#define INTR_APIC_TIMER     240     // APIC Local Timer
+#define INTR_APIC_SPURIOUS  255     // APIC Spurious Interrupt
 
 // IO APIC registers
 #define INTR_IOAPIC_ID      0x00
@@ -114,7 +114,6 @@ typedef struct IntrIdtPtrType
 #define INTR_IOAPIC_MASKED  0x00010000      // Masked interrupt
 #define INTR_IOAPIC_LEVEL   0x00008000      // Level triggered
 #define INTR_IOAPIC_POL_LOW 0x00002000      // Low polarity
-
 
 // Pointer to the IDT
 extern const IntrIdtPtrType IntrIdtPtr;

@@ -206,7 +206,7 @@ static void ParseAcpiTables(void)
 static void ApicCalibrateTimer(void)
 {
     // Enable APIC timer
-    ApicWrite32(APIC_REG_LVT_TIMER, APIC_INTR_TIMER);
+    ApicWrite32(APIC_REG_LVT_TIMER, INTR_APIC_TIMER);
 
     // Start PIT and count for 10ms
     uint8_t oldGatePort = IoInB(PIT_PORT_GATE) & 0xFC;
@@ -256,14 +256,14 @@ static void ApicBaseInit(void)
     ApicWrite32(APIC_REG_LVT_ERROR, APIC_LVT_DISABLE);
 
     // Enable APIC in the spurious interrupt vector
-    ApicWrite32(APIC_REG_SPURIOUS,  APIC_INTR_SPURIOUS | 0x80);
+    ApicWrite32(APIC_REG_SPURIOUS,  INTR_APIC_SPURIOUS | 0x100);
 }
 
 // Initializes the APIC timer on this CPU
 //  ApicCalibrateTimer must have been called before this
 static void ApicTimerInit(void)
 {
-    ApicWrite32(APIC_REG_LVT_TIMER, APIC_INTR_TIMER | 0x20000);
+    ApicWrite32(APIC_REG_LVT_TIMER, INTR_APIC_TIMER | 0x20000);
     ApicWrite32(APIC_REG_TIME_INIT, apicTimerInitial);
 }
 

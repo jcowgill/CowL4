@@ -70,12 +70,12 @@ IntrIsr\num:
     IsrNormal       19      # XM  - SIMD Exception
     #IsrNormal      20      # VE  - Virtualization Exception
 
-    # APIC Interrupts
-    #IsrNormal      32      # Spurious Interrupt (always ignored)
-    IsrNormal       33      # Timer Interrupt
-
     # Hardware interrupts (all use one isr)
-    IsrNormal       48      # Hardware interrupts
+    IsrNormal       32      # Hardware interrupts
+
+    # APIC Interrupts
+    IsrNormal       240     # Timer Interrupt
+    #IsrNormal      255     # Spurious Interrupt (always ignored)
 
 IntrEntry:
     # Interrupt entry point

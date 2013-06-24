@@ -134,10 +134,6 @@ typedef struct AcpiMadtApic
 // Other APIC constants
 #define APIC_LVT_DISABLE    0x10000 // Disables an LVT interrupt
 
-#define APIC_INTR_SPURIOUS  32      // APIC Spurious interrupt vector
-                                    //  Must be multiple of 16 less than 128
-#define APIC_INTR_TIMER     33      // APIC Timer interrupt vector
-
 #define APIC_IPI_INIT       0x4500  // Low fields for an init ipi
 #define APIC_IPI_SIPI       0x4600  // Low fields for an startup ipi (except vector)
 
