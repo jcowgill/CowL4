@@ -22,7 +22,7 @@
 CC          := clang
 
 # Global Compiler Options
-CF_GLOBAL   := -Wall -Wextra -g -std=gnu11 -fno-common
+CF_GLOBAL   := -Wall -Wextra -g -std=gnu99 -fno-common
 AF_GLOBAL   := -g
 LF_GLOBAL   := -n
 
